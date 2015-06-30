@@ -1,0 +1,18 @@
+{
+  "name": "hoganator",
+  "version": "1.0.0",
+  "description": "Hogan.js CommonJS compatible CLI precompiler",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "hoganator": "./bin/hoganator"
+  },
+  "author": "JC Ivancevich <jc.ivancevich@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "fs-extra": "^0.20.1",
+    "hogan.js": "^3.0.2",
+    "nopt": "^3.0.3"
+  }
+}

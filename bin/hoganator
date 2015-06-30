@@ -1,0 +1,119 @@
+#!/usr/bin/env node
+
+'use strict';
+var fs = require('fs');
+var path = require('path');
+var nopt = require('nopt');
+var fse = require('fs-extra');
+var hogan = require('hogan.js');
+
+var specials = ['/', '.', '*', '+', '?', '|', '(', ')', '[', ']', '{', '}', '\\'];
+var specialsRegExp = new RegExp('(\\' + specials.join('|\\') + ')', 'g');
+var options = {
+  'namespace': String,
+  'outputdir': path,
+  'version': true,
+  'help': true
+};
+var shortHand = {
+  'n': ['--namespace'],
+  'o': ['--outputdir'],
+  'h': ['--help'],
+  'v': ['--version']
+};
+var templates;
+
+// options
+options = nopt(options, shortHand);
+
+// escape special regexp characters
+function esc(text) {
+  return text.replace(specialsRegExp, '\\$1');
+}
+
+// cyan function for rob
+function cyan(text) {
+  return text;
+}
+
+// check for dirs and correct ext (<3 for windows)
+function extractFiles(args) {
+  var usage = '\n' + 'USAGE: hoganator --outputdir .bin views/**/*.html' + '\n';
+  var files = [];
+
+  if (options.version) {
+    console.log(require('../package.json').version);
+    process.exit(0);
+  }
+
+  if (!args.length || options.help) {
+    console.log(usage);
+    process.exit(0);
+  }
+
+  args.forEach(function (arg) {
+
+    if (/\*/.test(arg)) {
+      arg = arg.split('*');
+      return files = files.concat(
+        fs
+        .readdirSync(arg[0] || '.')
+        .map(function (f) {
+          var file = path.join(arg[0], f);
+          return new RegExp(esc(arg[1]) + '$').test(f) && fs.statSync(file).isFile() && file;
+        })
+        .filter(function (f) {
+          return f;
+        })
+      );
+    }
+
+    if (fs.statSync(arg).isFile()) { files.push(arg); }
+
+  });
+
+  return files;
+}
+
+// remove utf-8 byte order mark, http://en.wikipedia.org/wiki/Byte_order_mark
+function removeByteOrderMark(text) {
+  if (text.charCodeAt(0) === 0xfeff) {
+    return text.substring(1);
+  }
+  return text;
+}
+
+// wrap templates
+function wrap(file, name, openedFile) {
+  if (!options.outputdir) {
+    throw new Error('You must pass the `outputdir` argument.');
+  }
+  return 'var Hogan = require("hogan.js");\n' +
+    'var template = new Hogan.Template(' + hogan.compile(openedFile, {
+      asString: 1
+    }) + ');' + 'module.exports = function (data) { return template.render(data); }';
+}
+
+// Prepend namespace to template name
+function namespace(name) {
+  return (options.namespace || '') + name;
+}
+
+// write a template foreach file that matches template extension
+templates = extractFiles(options.argv.remain)
+  .map(function (file) {
+    var openedFile = fs.readFileSync(file, 'utf-8');
+    if (!openedFile) { return; }
+    var name = namespace(path.basename(file).replace(/\..*$/, ''));
+    openedFile = removeByteOrderMark(openedFile.trim());
+    openedFile = wrap(file, name, openedFile);
+    if (!options.outputdir) { return openedFile; }
+    fse.outputFileSync(path.join(options.outputdir, file.replace(/html$/, 'js')), openedFile);
+  })
+  .filter(function (t) {
+    return t;
+  });
+
+// output templates
+if (!templates.length || options.outputdir) { process.exit(0); }
+console.log(templates.join('\n'));
