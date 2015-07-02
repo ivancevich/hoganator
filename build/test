@@ -1,0 +1,7 @@
+#!/bin/bash
+rm -rf test/output
+cd test
+../bin/hoganator --outputdir output template.html
+sed -i '.bak.js' 's/hoganator\/node_modules/\.\.\/\.\.\/node_modules/g' ./output/template.js
+cd ..
+mocha

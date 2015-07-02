@@ -3,7 +3,7 @@
   "version": "1.0.1",
   "description": "Hogan.js CommonJS compatible CLI precompiler",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "build/test"
   },
   "bin": {
     "hoganator": "./bin/hoganator"
@@ -14,5 +14,9 @@
     "fs-extra": "^0.20.1",
     "hogan.js": "^3.0.2",
     "nopt": "^3.0.3"
+  },
+  "devDependencies": {
+    "chai": "^3.0.0",
+    "mocha": "^2.2.5"
   }
 }
