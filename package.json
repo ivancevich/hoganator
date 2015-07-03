@@ -2,6 +2,7 @@
   "name": "hoganator",
   "version": "1.0.1",
   "description": "Hogan.js CommonJS compatible CLI precompiler",
+  "main": "index.js",
   "scripts": {
     "test": "build/test"
   },

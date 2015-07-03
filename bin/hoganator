@@ -68,7 +68,9 @@ function extractFiles(args) {
       );
     }
 
-    if (fs.statSync(arg).isFile()) { files.push(arg); }
+    if (fs.statSync(arg).isFile()) {
+      files.push(arg);
+    }
 
   });
 
@@ -88,10 +90,29 @@ function wrap(file, name, openedFile) {
   if (!options.outputdir) {
     throw new Error('You must pass the `outputdir` argument.');
   }
-  return 'var Hogan = require("hoganator/node_modules/hogan.js/lib/hogan");\n' +
+  return 'var Hogan = require("hoganator");\n' +
     'var template = new Hogan.Template(' + hogan.compile(openedFile, {
       asString: 1
-    }) + ');' + 'module.exports = function (data) { return template.render(data); }';
+    }) + ');\n' +
+    'module.exports = function (data) {\n' +
+    '  var partials = ' + getPartials() + ';\n' +
+    '  return template.render(data, partials);\n' +
+    '}\n' +
+    'module.exports.template = template;\n';
+}
+
+function getPartials() {
+  var targetFiles = extractFiles(options.argv.remain).map(function (file) {
+    return {
+      name: namespace(path.basename(file).replace(/\..*$/, '')),
+      path: path.join(options.outputdir, file.replace(/html$/, 'js'))
+    };
+  });
+
+  return '{' +
+    targetFiles.map(function (target) {
+      return '"' + target.name + '": { path: "' + target.path + '"}';
+    }) + '}';
 }
 
 // Prepend namespace to template name
@@ -103,17 +124,24 @@ function namespace(name) {
 templates = extractFiles(options.argv.remain)
   .map(function (file) {
     var openedFile = fs.readFileSync(file, 'utf-8');
-    if (!openedFile) { return; }
+    if (!openedFile) {
+      return;
+    }
     var name = namespace(path.basename(file).replace(/\..*$/, ''));
     openedFile = removeByteOrderMark(openedFile.trim());
     openedFile = wrap(file, name, openedFile);
-    if (!options.outputdir) { return openedFile; }
-    fse.outputFileSync(path.join(options.outputdir, file.replace(/html$/, 'js')), openedFile);
+    if (!options.outputdir) {
+      return openedFile;
+    }
+    var targetFile = path.join(options.outputdir, file.replace(/html$/, 'js'));
+    fse.outputFileSync(targetFile, openedFile);
   })
   .filter(function (t) {
     return t;
   });
 
 // output templates
-if (!templates.length || options.outputdir) { process.exit(0); }
+if (!templates.length || options.outputdir) {
+  process.exit(0);
+}
 console.log(templates.join('\n'));
