@@ -94,25 +94,7 @@ function wrap(file, name, openedFile) {
     'var template = new Hogan.Template(' + hogan.compile(openedFile, {
       asString: 1
     }) + ');\n' +
-    'module.exports = function (data) {\n' +
-    '  var partials = ' + getPartials() + ';\n' +
-    '  return template.render(data, partials);\n' +
-    '}\n' +
-    'module.exports.template = template;\n';
-}
-
-function getPartials() {
-  var targetFiles = extractFiles(options.argv.remain).map(function (file) {
-    return {
-      name: namespace(path.basename(file).replace(/\..*$/, '')),
-      path: path.join(options.outputdir, file.replace(/html$/, 'js'))
-    };
-  });
-
-  return '{' +
-    targetFiles.map(function (target) {
-      return '"' + target.name + '": { path: "' + target.path + '"}';
-    }) + '}';
+    'module.exports = template.render.bind(template);\n';
 }
 
 // Prepend namespace to template name
