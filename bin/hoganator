@@ -5,7 +5,7 @@ var fs = require('fs');
 var path = require('path');
 var nopt = require('nopt');
 var fse = require('fs-extra');
-var hogan = require('hogan.js');
+var hogan = require('../');
 
 var specials = ['/', '.', '*', '+', '?', '|', '(', ')', '[', ']', '{', '}', '\\'];
 var specialsRegExp = new RegExp('(\\' + specials.join('|\\') + ')', 'g');
